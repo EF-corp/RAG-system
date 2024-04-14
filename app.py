@@ -12,8 +12,12 @@ from langchain.agents.agent_toolkits import (
     create_vectorstore_agent,
     VectorStoreToolkit,
     VectorStoreInfo)
+from dotenv import load_dotenv
+import os
 
-os.environ['OPENAI_API_KEY'] = 'your_openai_api_key_here'
+load_dotenv()
+
+os.environ['OPENAI_API_KEY'] = os.getenv("API_KEY")
 
 llm = OpenAI(temperature=0.1, verbose=True)
 embeddings = OpenAIEmbeddings()
@@ -32,6 +36,7 @@ if choice == "Upload File":
 
     if not name:
         name = "default"
+
     if not desc:
         desc = "default"
 
@@ -48,18 +53,18 @@ if choice == "Upload File":
             pages = loader.load_and_split()
             store = Chroma.from_documents(pages, embeddings, collection_name=name)
 
-            vectorstoreinfo = VectorStoreInfo(vectorstore=store,
-                                            name=name)
+            vectorstoreinfo = VectorStoreInfo(vectorstore=store,name=name, description=desc)
             
             toolkit = VectorStoreToolkit(vectorstore_info=vectorstoreinfo)
-
-            agent = create_vectorstore_agent(llm, toolkit, verbose=True)
+            st.session_state.agent = create_vectorstore_agent(llm, toolkit, verbose=True)
+            
+            st.write("Success!")
 
 if choice == "Get Answer":
     prompt = st.text_input('Input your prompt here')
 
     if prompt and st.button("Get Answer"):
-        response = agent.run(prompt)
+        response = st.session_state.agent.run(prompt)
 
         st.write(response)
 
